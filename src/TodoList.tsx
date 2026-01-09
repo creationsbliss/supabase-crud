@@ -1,8 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Delete03Icon as DeleteIcon,
-  PencilEdit02Icon as EditIcon,
-} from "@hugeicons/core-free-icons";
+import { Delete03Icon as DeleteIcon } from "@hugeicons/core-free-icons";
 
 import supabase from "./supabase-client";
 import { useEffect, useState } from "react";
@@ -17,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "./components/ui/button";
 import { toast } from "sonner";
+import { cn } from "./lib/utils";
 
 interface TodoListsShpape {
   id: number;
@@ -43,6 +41,25 @@ const TodoList = () => {
 
     fetchToDos();
   }, [toDoLists]);
+
+  // Handle status change of a todo
+  const handleChangeStatus = async (id: number, isCompleted: boolean) => {
+    const { error } = await supabase
+      .from("TodoList")
+      .update({ isCompleted: !isCompleted })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to update todo status. Please try again.");
+    } else {
+      toast.success("Todo status updated successfully!");
+      setToDoLists((prev) =>
+        prev.map((todo) =>
+          todo.id === id ? { ...todo, isCompleted: !isCompleted } : todo
+        )
+      );
+    }
+  };
 
   // Handle delete todo
   const handleDelete = async (id: number) => {
@@ -76,12 +93,16 @@ const TodoList = () => {
         </TableHeader>
         <TableBody>
           {toDoLists.map(({ id, name, isCompleted }) => (
-            <TableRow key={id}>
+            <TableRow key={id} className={cn(isCompleted && "line-through")}>
               <TableCell>{name}</TableCell>
               <TableCell>{isCompleted ? "Completed" : "Pending"}</TableCell>
               <TableCell className="flex gap-2 justify-end">
-                <Button variant="outline" className="cursor-pointer">
-                  <HugeiconsIcon icon={EditIcon} />
+                <Button
+                  onClick={() => handleChangeStatus(id, isCompleted)}
+                  variant="outline"
+                  className="cursor-pointer"
+                >
+                  {isCompleted ? "Mark as Pending" : "Mark as Complete"}
                 </Button>
                 <Button
                   onClick={() => handleDelete(id)}
